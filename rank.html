@@ -1,0 +1,2609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>MGR Multiverse Awards — Competitor Level Rankings</title>
+<style>
+  :root{
+    --bg1:#0a0a16; --bg2:#141428; --gold:#dfb25c; --gold-light:#f5d696;
+    --panel:#12121f; --panel-line:rgba(255,255,255,.08); --text:#e9e6f0; --muted:#a9a5b8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(ellipse at 50% -10%, #1c1c3a 0%, var(--bg1) 60%);
+    color:var(--text);
+  }
+  header{
+    text-align:center; padding:26px 16px 14px; border-bottom:1px solid var(--panel-line);
+  }
+  header h1{
+    margin:0; font-size:1.35rem; letter-spacing:.5px; color:var(--gold-light);
+    text-shadow:0 0 18px rgba(223,178,92,.35);
+  }
+  header p{margin:8px 0 0; color:var(--muted); font-size:.85rem;}
+
+  .wrap{max-width:900px; margin:0 auto; padding:18px 14px 60px;}
+
+  .grid{
+    display:grid; grid-template-columns:repeat(5, 1fr); gap:10px;
+  }
+  .tier-break{
+    grid-column:1 / -1; height:1px; background:linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin:6px 0; opacity:.5;
+  }
+  .badge-cell{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:10px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:6px 2px 8px; cursor:pointer; transition:transform .15s, border-color .15s;
+  }
+  .badge-cell:active{transform:scale(.95);}
+  .badge-cell:hover{border-color:var(--gold);}
+  .badge-cell svg{width:100%; max-width:64px; aspect-ratio:1/1;}
+  .badge-cell .lvl-num{font-size:.68rem; color:var(--muted); margin-top:2px; font-weight:600;}
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(4,4,10,.82); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center; padding:20px; z-index:50;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-card{
+    width:100%; max-width:420px; background:linear-gradient(180deg,#171728,#0f0f1c);
+    border:1px solid var(--gold); border-radius:16px; padding:22px 20px 24px; position:relative;
+    box-shadow:0 20px 60px rgba(0,0,0,.6);
+    max-height:88vh; overflow-y:auto;
+    transition:box-shadow .25s ease;
+  }
+  .modal-nav-row{
+    display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:6px;
+  }
+  .nav-arrow{
+    background:rgba(223,178,92,.08); border:1px solid rgba(223,178,92,.4); color:var(--gold-light);
+    width:38px; height:38px; border-radius:50%; font-size:1.4rem; line-height:1; cursor:pointer;
+    flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:background .15s, transform .1s;
+  }
+  .nav-arrow:active{transform:scale(.92);}
+  .nav-arrow:disabled{opacity:.25; cursor:default;}
+  .nav-arrow:not(:disabled):hover{background:rgba(223,178,92,.18);}
+  .modal-close{
+    position:absolute; top:10px; right:12px; background:none; border:none; color:var(--muted);
+    font-size:1.4rem; cursor:pointer; line-height:1;
+  }
+  .modal-badge{width:120px; margin:0 auto 10px; display:block;}
+  .modal-card h2{margin:0 0 2px; text-align:center; color:var(--gold-light); font-size:1.15rem;}
+  .modal-level-tag{
+    text-align:center; color:var(--muted); font-size:.8rem; margin-bottom:14px; letter-spacing:.5px;
+  }
+  .stat-row{
+    display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--panel-line);
+    font-size:.88rem;
+  }
+  .stat-row .k{color:var(--muted);}
+  .stat-row .v{font-weight:700; color:var(--text);}
+  .motiv-line{
+    text-align:center; font-size:1.05rem; font-weight:700; color:var(--gold-light); margin:16px 0 10px;
+    text-shadow:0 0 12px rgba(223,178,92,.25);
+  }
+  .importance{
+    font-size:.85rem; color:var(--muted); line-height:1.5; margin-top:6px;
+  }
+  .placeholder-note{
+    font-size:.7rem; color:#8d7a4a; margin-top:14px; border-top:1px dashed var(--panel-line); padding-top:10px;
+  }
+  .meaning-tag{
+    text-align:center; font-size:.72rem; letter-spacing:1.5px; text-transform:uppercase;
+    color:#8f8aa8; margin-top:-6px; margin-bottom:10px;
+  }
+
+  /* ---------- per-tier animations (portable: pure CSS, no JS timers) ---------- */
+  /* Tier 0 (1-10): breathing */
+  @keyframes anim-breathe{ 0%,100%{transform:scale(1);} 50%{transform:scale(1.08);} }
+  .t-breathe{ animation:anim-breathe 4s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Tier 1 (11-20): steady rotation, once every 2s */
+  @keyframes anim-rotate-cw{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+  .t-rotate-cw{ animation:anim-rotate-cw 2s linear infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Tier 2 (21-30): pulsing glow */
+  @keyframes anim-pulse-glow{ 0%,100%{filter:drop-shadow(0 0 2px currentColor) brightness(1);} 50%{filter:drop-shadow(0 0 7px currentColor) brightness(1.3);} }
+  .t-pulse-glow{ animation:anim-pulse-glow 2.6s ease-in-out infinite; }
+
+  /* Tier 3 (31-40): shimmer sweep — handled via SMIL inside the SVG itself */
+
+  /* Tier 4 (41-49): sway, like a pendulum */
+  @keyframes anim-sway{ 0%,100%{transform:rotate(-9deg);} 50%{transform:rotate(9deg);} }
+  .t-sway{ animation:anim-sway 2.8s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Tier 5 (50-59): twinkle — Diamond Dawn */
+  @keyframes anim-twinkle{ 0%,100%{filter:brightness(1);} 50%{filter:brightness(1.6);} }
+  .t-twinkle{ animation:anim-twinkle 1.4s ease-in-out infinite; }
+
+  /* Tier 6 (60-69): counter-rotation, opposite direction/speed to tier 1 */
+  @keyframes anim-rotate-ccw{ from{transform:rotate(0deg);} to{transform:rotate(-360deg);} }
+  .t-rotate-ccw{ animation:anim-rotate-ccw 3.4s linear infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Tier 7 (70-79): ember pulse — glow + scale together */
+  @keyframes anim-ember{ 0%,100%{filter:drop-shadow(0 0 3px #d43a3a) brightness(1); transform:scale(1);} 50%{filter:drop-shadow(0 0 11px #ff6b6b) brightness(1.2); transform:scale(1.05);} }
+  .t-ember{ animation:anim-ember 2.1s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Tier 8 (80-89): slow rotation (paired with SMIL shimmer) */
+  .t-rotate-slow{ animation:anim-rotate-cw 8s linear infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Tier 9 (90-99): heartbeat double-pulse */
+  @keyframes anim-heartbeat{ 0%,100%{transform:scale(1);} 14%{transform:scale(1.12);} 28%{transform:scale(1);} 42%{transform:scale(1.08);} 65%{transform:scale(1);} }
+  .t-heartbeat{ animation:anim-heartbeat 1.7s ease-in-out infinite; transform-box:fill-box; transform-origin:center; }
+
+  /* Apex (Level 100): rotate + breathe (nested groups) + gold glow */
+  @keyframes anim-glow-gold{ 0%,100%{filter:drop-shadow(0 0 4px #ffdd7a);} 50%{filter:drop-shadow(0 0 16px #ffe9a8);} }
+  .t-glow-gold{ animation:anim-glow-gold 2.4s ease-in-out infinite; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Dancing+Script:wght@600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet"><style>h1,h2,h3,h4{font-family:"Dancing Script","Cormorant Garamond",cursive!important;letter-spacing:.2px}body,p,li,label,button,input,select,textarea,a,summary{font-family:"Cormorant Garamond",Georgia,serif!important;font-weight:600}body{font-size:1.08em}</style><style>h1,h2,h3{background:linear-gradient(90deg,#E8B84B,#F08A3C,#C0489E,#7A3CD6);-webkit-background-clip:text;background-clip:text;color:transparent!important}</style></head>
+<body>
+
+<header>
+  <h1>MGR MULTIVERSE AWARDS</h1>
+  <p>Competitor Level Rankings · The Geometric Code · Tap any badge for details</p>
+</header>
+
+<div class="wrap">
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-card" id="modalCard">
+    <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+    <div class="modal-nav-row">
+      <button class="nav-arrow" id="prevBtn" aria-label="Previous rank">‹</button>
+      <div id="modalBadgeWrap"></div>
+      <button class="nav-arrow" id="nextBtn" aria-label="Next rank">›</button>
+    </div>
+    <h2 id="modalName"></h2>
+    <div class="meaning-tag" id="modalMeaning"></div>
+    <div class="modal-level-tag" id="modalTag"></div>
+    <div class="stat-row"><span class="k">Days to unlock</span><span class="v" id="modalDays"></span></div>
+    <div class="stat-row"><span class="k">Expectation</span><span class="v" id="modalExpect"></span></div>
+    <div class="motiv-line" id="modalMotiv"></div>
+    <div class="importance" id="modalImportance"></div>
+    <div class="placeholder-note">"Expectation" is a placeholder metric (not in the original spec) — swap in the real formula whenever it's defined.</div>
+  </div>
+</div>
+
+<script id="levels-data" type="application/json">
+[
+ {
+  "level": 1,
+  "name": "Novice",
+  "days": 30,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Begin.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 100,
+  "expectationPointsLabel": "100"
+ },
+ {
+  "level": 2,
+  "name": "Initiate",
+  "days": 60,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Rise.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 120,
+  "expectationPointsLabel": "120"
+ },
+ {
+  "level": 3,
+  "name": "Scout",
+  "days": 90,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Persist.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 145,
+  "expectationPointsLabel": "145"
+ },
+ {
+  "level": 4,
+  "name": "Sentinel",
+  "days": 120,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Grow.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 175,
+  "expectationPointsLabel": "175"
+ },
+ {
+  "level": 5,
+  "name": "Pathfinder",
+  "days": 150,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Advance.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 210,
+  "expectationPointsLabel": "210"
+ },
+ {
+  "level": 6,
+  "name": "Guardian",
+  "days": 180,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Endure.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 254,
+  "expectationPointsLabel": "254"
+ },
+ {
+  "level": 7,
+  "name": "Champion",
+  "days": 210,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Focus.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 305,
+  "expectationPointsLabel": "305"
+ },
+ {
+  "level": 8,
+  "name": "Steward",
+  "days": 240,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Push forward.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 368,
+  "expectationPointsLabel": "368"
+ },
+ {
+  "level": 9,
+  "name": "Marshal",
+  "days": 270,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Stand firm.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 443,
+  "expectationPointsLabel": "443"
+ },
+ {
+  "level": 10,
+  "name": "Officer",
+  "days": 300,
+  "decagons": 0,
+  "colors": [],
+  "diamond": false,
+  "shape": "decagon",
+  "goldApex": false,
+  "tier": 0,
+  "meaning": "The Awakening",
+  "motivation": "Break through.",
+  "importance": "The foundation tier \u2014 every legend starts with a single circle and the discipline to show up, day after day.",
+  "expectationPoints": 534,
+  "expectationPointsLabel": "534"
+ },
+ {
+  "level": 11,
+  "name": "Vanguard",
+  "days": 330,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Lead.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 643,
+  "expectationPointsLabel": "643"
+ },
+ {
+  "level": 12,
+  "name": "Preceptor",
+  "days": 360,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Command.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 774,
+  "expectationPointsLabel": "774"
+ },
+ {
+  "level": 13,
+  "name": "Enforcer",
+  "days": 390,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Inspire.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 933,
+  "expectationPointsLabel": "933"
+ },
+ {
+  "level": 14,
+  "name": "Commander",
+  "days": 420,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Elevate.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 1123,
+  "expectationPointsLabel": "1.1K"
+ },
+ {
+  "level": 15,
+  "name": "Overseer",
+  "days": 450,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Shine.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 1353,
+  "expectationPointsLabel": "1.4K"
+ },
+ {
+  "level": 16,
+  "name": "Director",
+  "days": 480,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Ascend.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 1630,
+  "expectationPointsLabel": "1.6K"
+ },
+ {
+  "level": 17,
+  "name": "Archon",
+  "days": 510,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Transcend.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 1963,
+  "expectationPointsLabel": "2K"
+ },
+ {
+  "level": 18,
+  "name": "Viceroy",
+  "days": 540,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Radiate.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 2364,
+  "expectationPointsLabel": "2.4K"
+ },
+ {
+  "level": 19,
+  "name": "High Consul",
+  "days": 570,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Conquer.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 2848,
+  "expectationPointsLabel": "2.8K"
+ },
+ {
+  "level": 20,
+  "name": "Justiciar",
+  "days": 600,
+  "decagons": 1,
+  "colors": [
+   "#2e6fd8"
+  ],
+  "diamond": false,
+  "shape": "decagon",
+  "goldApex": false,
+  "tier": 1,
+  "meaning": "The Discipline",
+  "motivation": "Unite.",
+  "importance": "The first Blue Decagon marks a real streak: consistency has become identity, not accident.",
+  "expectationPoints": 3430,
+  "expectationPointsLabel": "3.4K"
+ },
+ {
+  "level": 21,
+  "name": "Envoy",
+  "days": 630,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Master your craft.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 4132,
+  "expectationPointsLabel": "4.1K"
+ },
+ {
+  "level": 22,
+  "name": "Warlord",
+  "days": 660,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Own the moment.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 4977,
+  "expectationPointsLabel": "5K"
+ },
+ {
+  "level": 23,
+  "name": "Consul",
+  "days": 690,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Set the standard.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 5995,
+  "expectationPointsLabel": "6K"
+ },
+ {
+  "level": 24,
+  "name": "Ambassador",
+  "days": 720,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Become legend.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 7221,
+  "expectationPointsLabel": "7.2K"
+ },
+ {
+  "level": 25,
+  "name": "Chancellor",
+  "days": 750,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Never stop.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 8697,
+  "expectationPointsLabel": "8.7K"
+ },
+ {
+  "level": 26,
+  "name": "Master",
+  "days": 780,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Aim higher.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 10476,
+  "expectationPointsLabel": "10.5K"
+ },
+ {
+  "level": 27,
+  "name": "Grand Preceptor",
+  "days": 810,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Hold the line.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 12619,
+  "expectationPointsLabel": "12.6K"
+ },
+ {
+  "level": 28,
+  "name": "Titan",
+  "days": 840,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Forge ahead.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 15199,
+  "expectationPointsLabel": "15.2K"
+ },
+ {
+  "level": 29,
+  "name": "High Sovereign",
+  "days": 870,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Claim your rank.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 18307,
+  "expectationPointsLabel": "18.3K"
+ },
+ {
+  "level": 30,
+  "name": "Multiverse Paragon / Legend",
+  "days": 900,
+  "decagons": 2,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f"
+  ],
+  "diamond": false,
+  "shape": "decagon",
+  "goldApex": false,
+  "tier": 2,
+  "meaning": "The Alliance",
+  "motivation": "Legendary.",
+  "importance": "Green joins Blue \u2014 this rank proves the habit survives beyond a first burst of motivation.",
+  "expectationPoints": 22051,
+  "expectationPointsLabel": "22.1K"
+ },
+ {
+  "level": 31,
+  "name": "Astral Envoy",
+  "days": 930,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Begin.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 26561,
+  "expectationPointsLabel": "26.6K"
+ },
+ {
+  "level": 32,
+  "name": "Astral Warlord",
+  "days": 960,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Rise.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 31993,
+  "expectationPointsLabel": "32K"
+ },
+ {
+  "level": 33,
+  "name": "Astral Consul",
+  "days": 990,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Persist.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 38535,
+  "expectationPointsLabel": "38.5K"
+ },
+ {
+  "level": 34,
+  "name": "Astral Ambassador",
+  "days": 1020,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Grow.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 46416,
+  "expectationPointsLabel": "46.4K"
+ },
+ {
+  "level": 35,
+  "name": "Astral Chancellor",
+  "days": 1050,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Advance.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 55908,
+  "expectationPointsLabel": "55.9K"
+ },
+ {
+  "level": 36,
+  "name": "Astral Master",
+  "days": 1080,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Endure.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 67342,
+  "expectationPointsLabel": "67.3K"
+ },
+ {
+  "level": 37,
+  "name": "Astral Preceptor",
+  "days": 1110,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Focus.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 81113,
+  "expectationPointsLabel": "81.1K"
+ },
+ {
+  "level": 38,
+  "name": "Astral Titan",
+  "days": 1140,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Push forward.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 97701,
+  "expectationPointsLabel": "97.7K"
+ },
+ {
+  "level": 39,
+  "name": "Astral Sovereign",
+  "days": 1170,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Stand firm.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 117681,
+  "expectationPointsLabel": "117.7K"
+ },
+ {
+  "level": 40,
+  "name": "Cosmic Sage",
+  "days": 1200,
+  "decagons": 3,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e"
+  ],
+  "diamond": false,
+  "shape": "decagon",
+  "goldApex": false,
+  "tier": 3,
+  "meaning": "The Resolve",
+  "motivation": "Break through.",
+  "importance": "With Orange layered in, this is the tier where casual participants fall away and the committed remain.",
+  "expectationPoints": 141747,
+  "expectationPointsLabel": "141.7K"
+ },
+ {
+  "level": 41,
+  "name": "Zenith Envoy",
+  "days": 1230,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Lead.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 170735,
+  "expectationPointsLabel": "170.7K"
+ },
+ {
+  "level": 42,
+  "name": "Zenith Warlord",
+  "days": 1260,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Command.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 205651,
+  "expectationPointsLabel": "205.7K"
+ },
+ {
+  "level": 43,
+  "name": "Zenith Consul",
+  "days": 1290,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Inspire.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 247708,
+  "expectationPointsLabel": "247.7K"
+ },
+ {
+  "level": 44,
+  "name": "Zenith Ambassador",
+  "days": 1320,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Elevate.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 298365,
+  "expectationPointsLabel": "298.4K"
+ },
+ {
+  "level": 45,
+  "name": "Zenith Chancellor",
+  "days": 1350,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Shine.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 359381,
+  "expectationPointsLabel": "359.4K"
+ },
+ {
+  "level": 46,
+  "name": "Zenith Master",
+  "days": 1380,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Ascend.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 432876,
+  "expectationPointsLabel": "432.9K"
+ },
+ {
+  "level": 47,
+  "name": "Zenith Preceptor",
+  "days": 1410,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Transcend.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 521401,
+  "expectationPointsLabel": "521.4K"
+ },
+ {
+  "level": 48,
+  "name": "Zenith Titan",
+  "days": 1440,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Radiate.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 628029,
+  "expectationPointsLabel": "628K"
+ },
+ {
+  "level": 49,
+  "name": "Zenith Sovereign",
+  "days": 1470,
+  "decagons": 4,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0"
+  ],
+  "diamond": false,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 4,
+  "meaning": "The Ascent",
+  "motivation": "Conquer.",
+  "importance": "Pink deepens the ring \u2014 the runway to Diamond status, where effort compounds visibly.",
+  "expectationPoints": 756463,
+  "expectationPointsLabel": "756.5K"
+ },
+ {
+  "level": 50,
+  "name": "Diamond Origin",
+  "days": 1500,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": null,
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Unite.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 911163,
+  "expectationPointsLabel": "911.2K"
+ },
+ {
+  "level": 51,
+  "name": "Diamond Novice",
+  "days": 1530,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Master your craft.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 1097499,
+  "expectationPointsLabel": "1.1M"
+ },
+ {
+  "level": 52,
+  "name": "Diamond Initiate",
+  "days": 1560,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Own the moment.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 1321941,
+  "expectationPointsLabel": "1.3M"
+ },
+ {
+  "level": 53,
+  "name": "Diamond Scout",
+  "days": 1590,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Set the standard.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 1592283,
+  "expectationPointsLabel": "1.6M"
+ },
+ {
+  "level": 54,
+  "name": "Diamond Sentinel",
+  "days": 1620,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Become legend.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 1917910,
+  "expectationPointsLabel": "1.9M"
+ },
+ {
+  "level": 55,
+  "name": "Diamond Pathfinder",
+  "days": 1650,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Never stop.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 2310130,
+  "expectationPointsLabel": "2.3M"
+ },
+ {
+  "level": 56,
+  "name": "Diamond Guardian",
+  "days": 1680,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Aim higher.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 2782559,
+  "expectationPointsLabel": "2.8M"
+ },
+ {
+  "level": 57,
+  "name": "Diamond Champion",
+  "days": 1710,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Hold the line.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 3351603,
+  "expectationPointsLabel": "3.4M"
+ },
+ {
+  "level": 58,
+  "name": "Diamond Steward",
+  "days": 1740,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Forge ahead.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 4037017,
+  "expectationPointsLabel": "4M"
+ },
+ {
+  "level": 59,
+  "name": "Diamond Marshal",
+  "days": 1770,
+  "decagons": 5,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0"
+  ],
+  "diamond": true,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 5,
+  "meaning": "The Diamond Dawn",
+  "motivation": "Claim your rank.",
+  "importance": "The Diamond appears. From here on, every badge carries a permanent core of proven mastery.",
+  "expectationPoints": 4862602,
+  "expectationPointsLabel": "4.9M"
+ },
+ {
+  "level": 60,
+  "name": "Silver Diamond Origin",
+  "days": 1800,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": null,
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Legendary.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 5857021,
+  "expectationPointsLabel": "5.9M"
+ },
+ {
+  "level": 61,
+  "name": "Silver Novice",
+  "days": 1830,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Begin.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 7054802,
+  "expectationPointsLabel": "7.1M"
+ },
+ {
+  "level": 62,
+  "name": "Silver Initiate",
+  "days": 1860,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Rise.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 8497534,
+  "expectationPointsLabel": "8.5M"
+ },
+ {
+  "level": 63,
+  "name": "Silver Scout",
+  "days": 1890,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Persist.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 10235310,
+  "expectationPointsLabel": "10.2M"
+ },
+ {
+  "level": 64,
+  "name": "Silver Sentinel",
+  "days": 1920,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Grow.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 12328467,
+  "expectationPointsLabel": "12.3M"
+ },
+ {
+  "level": 65,
+  "name": "Silver Pathfinder",
+  "days": 1950,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Advance.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 14849683,
+  "expectationPointsLabel": "14.8M"
+ },
+ {
+  "level": 66,
+  "name": "Silver Guardian",
+  "days": 1980,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Endure.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 17886495,
+  "expectationPointsLabel": "17.9M"
+ },
+ {
+  "level": 67,
+  "name": "Silver Champion",
+  "days": 2010,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Focus.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 21544347,
+  "expectationPointsLabel": "21.5M"
+ },
+ {
+  "level": 68,
+  "name": "Silver Steward",
+  "days": 2040,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Push forward.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 25950242,
+  "expectationPointsLabel": "26M"
+ },
+ {
+  "level": 69,
+  "name": "Silver Marshal",
+  "days": 2070,
+  "decagons": 6,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1"
+  ],
+  "diamond": true,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 6,
+  "meaning": "The Tempering",
+  "motivation": "Stand firm.",
+  "importance": "Silver joins the Diamond ring \u2014 recognition that this is now sustained excellence, not a phase.",
+  "expectationPoints": 31257158,
+  "expectationPointsLabel": "31.3M"
+ },
+ {
+  "level": 70,
+  "name": "Crimson Diamond Archon",
+  "days": 2100,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": null,
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Break through.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 37649358,
+  "expectationPointsLabel": "37.6M"
+ },
+ {
+  "level": 71,
+  "name": "Crimson Envoy",
+  "days": 2130,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Lead.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 45348785,
+  "expectationPointsLabel": "45.3M"
+ },
+ {
+  "level": 72,
+  "name": "Crimson Warlord",
+  "days": 2160,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Command.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 54622772,
+  "expectationPointsLabel": "54.6M"
+ },
+ {
+  "level": 73,
+  "name": "Crimson Consul",
+  "days": 2190,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Inspire.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 65793322,
+  "expectationPointsLabel": "65.8M"
+ },
+ {
+  "level": 74,
+  "name": "Crimson Ambassador",
+  "days": 2220,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Elevate.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 79248290,
+  "expectationPointsLabel": "79.2M"
+ },
+ {
+  "level": 75,
+  "name": "Crimson Chancellor",
+  "days": 2250,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Shine.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 95454846,
+  "expectationPointsLabel": "95.5M"
+ },
+ {
+  "level": 76,
+  "name": "Crimson Master",
+  "days": 2280,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Ascend.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 114975700,
+  "expectationPointsLabel": "115M"
+ },
+ {
+  "level": 77,
+  "name": "Crimson Preceptor",
+  "days": 2310,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Transcend.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 138488637,
+  "expectationPointsLabel": "138.5M"
+ },
+ {
+  "level": 78,
+  "name": "Crimson Titan",
+  "days": 2340,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Radiate.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 166810054,
+  "expectationPointsLabel": "166.8M"
+ },
+ {
+  "level": 79,
+  "name": "Crimson Sovereign",
+  "days": 2370,
+  "decagons": 7,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a"
+  ],
+  "diamond": true,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 7,
+  "meaning": "The Crucible",
+  "motivation": "Conquer.",
+  "importance": "Red enters the sequence \u2014 a tier reserved for competitors whose commitment has become their reputation.",
+  "expectationPoints": 200923300,
+  "expectationPointsLabel": "200.9M"
+ },
+ {
+  "level": 80,
+  "name": "Galactic Origin",
+  "days": 2400,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": null,
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Unite.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 242012826,
+  "expectationPointsLabel": "242M"
+ },
+ {
+  "level": 81,
+  "name": "Galactic Novice",
+  "days": 2430,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Master your craft.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 291505306,
+  "expectationPointsLabel": "291.5M"
+ },
+ {
+  "level": 82,
+  "name": "Galactic Initiate",
+  "days": 2460,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Own the moment.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 351119173,
+  "expectationPointsLabel": "351.1M"
+ },
+ {
+  "level": 83,
+  "name": "Galactic Scout",
+  "days": 2490,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Set the standard.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 422924287,
+  "expectationPointsLabel": "422.9M"
+ },
+ {
+  "level": 84,
+  "name": "Galactic Sentinel",
+  "days": 2520,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Become legend.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 509413801,
+  "expectationPointsLabel": "509.4M"
+ },
+ {
+  "level": 85,
+  "name": "Galactic Pathfinder",
+  "days": 2550,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Never stop.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 613590727,
+  "expectationPointsLabel": "613.6M"
+ },
+ {
+  "level": 86,
+  "name": "Galactic Guardian",
+  "days": 2580,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Aim higher.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 739072203,
+  "expectationPointsLabel": "739.1M"
+ },
+ {
+  "level": 87,
+  "name": "Galactic Champion",
+  "days": 2610,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Hold the line.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 890215085,
+  "expectationPointsLabel": "890.2M"
+ },
+ {
+  "level": 88,
+  "name": "Galactic Steward",
+  "days": 2640,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Forge ahead.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 1072267222,
+  "expectationPointsLabel": "1.1B"
+ },
+ {
+  "level": 89,
+  "name": "Galactic Marshal",
+  "days": 2670,
+  "decagons": 8,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4"
+  ],
+  "diamond": true,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 8,
+  "meaning": "The Radiance",
+  "motivation": "Claim your rank.",
+  "importance": "White joins the ring \u2014 pristine, exacting standards; this tier is visible leadership within the Multiverse.",
+  "expectationPoints": 1291549665,
+  "expectationPointsLabel": "1.3B"
+ },
+ {
+  "level": 90,
+  "name": "Imperial Origin",
+  "days": 2700,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": null,
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Legendary.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 1555676144,
+  "expectationPointsLabel": "1.6B"
+ },
+ {
+  "level": 91,
+  "name": "Imperial Novice",
+  "days": 2730,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "circle",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Begin.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 1873817423,
+  "expectationPointsLabel": "1.9B"
+ },
+ {
+  "level": 92,
+  "name": "Imperial Initiate",
+  "days": 2760,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "dissected-circle",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Rise.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 2257019720,
+  "expectationPointsLabel": "2.3B"
+ },
+ {
+  "level": 93,
+  "name": "Imperial Scout",
+  "days": 2790,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "triangle",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Persist.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 2718588243,
+  "expectationPointsLabel": "2.7B"
+ },
+ {
+  "level": 94,
+  "name": "Imperial Sentinel",
+  "days": 2820,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "square",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Grow.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 3274549163,
+  "expectationPointsLabel": "3.3B"
+ },
+ {
+  "level": 95,
+  "name": "Imperial Pathfinder",
+  "days": 2850,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "pentagon",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Advance.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 3944206059,
+  "expectationPointsLabel": "3.9B"
+ },
+ {
+  "level": 96,
+  "name": "Imperial Guardian",
+  "days": 2880,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "hexagon",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Endure.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 4750810162,
+  "expectationPointsLabel": "4.8B"
+ },
+ {
+  "level": 97,
+  "name": "Imperial Champion",
+  "days": 2910,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "heptagon",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Focus.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 5722367659,
+  "expectationPointsLabel": "5.7B"
+ },
+ {
+  "level": 98,
+  "name": "Imperial Steward",
+  "days": 2940,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "octagon",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Push forward.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 6892612104,
+  "expectationPointsLabel": "6.9B"
+ },
+ {
+  "level": 99,
+  "name": "Imperial Sovereign",
+  "days": 2970,
+  "decagons": 9,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d"
+  ],
+  "diamond": true,
+  "shape": "nonagon",
+  "goldApex": false,
+  "tier": 9,
+  "meaning": "The Threshold",
+  "motivation": "Stand firm.",
+  "importance": "Burgundy deepens the crest \u2014 reserved for the rare few who have nearly reached the apex.",
+  "expectationPoints": 8302175681,
+  "expectationPointsLabel": "8.3B"
+ },
+ {
+  "level": 100,
+  "name": "Absolute Sovereign / Grand Legend",
+  "days": 3000,
+  "decagons": 10,
+  "colors": [
+   "#2e6fd8",
+   "#2fa64f",
+   "#e08a1e",
+   "#e85fa0",
+   "#8a4fe0",
+   "#c7cbd1",
+   "#d43a3a",
+   "#f4f4f4",
+   "#7a1f3d",
+   "#d9a52c"
+  ],
+  "diamond": true,
+  "shape": null,
+  "goldApex": true,
+  "tier": 10,
+  "meaning": "The Absolute",
+  "motivation": "Break through.",
+  "importance": "The Absolute Sovereign apex: ten concentric decagons in full color, gold-lit, diamond blazing \u2014 the highest rank the Multiverse recognizes.",
+  "expectationPoints": 10000000000,
+  "expectationPointsLabel": "10B"
+ }
+]
+</script>
+
+<script>
+const LEVELS = JSON.parse(document.getElementById('levels-data').textContent);
+
+/* =========================================================================
+   RANK SYSTEM BEYOND LEVEL 100 — "PRESTIGE CYCLES" (baked in, not yet rendered)
+   ---------------------------------------------------------------------------
+   The 1-100 badge system (tiers, decagon colors, diamond milestone) is one
+   full "cycle". Past level 100, the same 1-100 logic repeats indefinitely,
+   but each cycle is told apart by drawing its recurring motif shape
+   side-by-side, repeated once per cycle number:
+     - Levels   1-100  = cycle 1 -> motif drawn once   (built above)
+     - Levels 101-200  = cycle 2 -> motif drawn twice,  side by side
+     - Levels 201-300  = cycle 3 -> motif drawn 3x,     side by side
+     - Levels 301-400  = cycle 4 -> motif drawn 4x, and so on forever.
+   The position-in-cycle still picks the shape/tier/decagon-count exactly as
+   levels 1-100 do below — only the repeat-count of that shape changes.
+   To extend the grid past 100, regenerate data for the desired level range
+   using cycleInfo() below, then pass entry.repeat into buildBadgeSVG() to
+   lay out that many copies of the motif side by side instead of one.
+   ========================================================================= */
+function cycleInfo(level) {
+  const cycle = Math.floor((level - 1) / 100) + 1;      // 1, 2, 3, ...
+  const positionInCycle = ((level - 1) % 100) + 1;       // 1..100, reuses all tier/shape rules above
+  const repeat = cycle;                                   // how many copies of the motif to draw side by side
+  return { cycle, positionInCycle, repeat };
+}
+
+
+// ---------- badge SVG generator ----------
+function regularPolygonPoints(cx, cy, r, sides, rotationDeg = -90) {
+  const pts = [];
+  for (let i = 0; i < sides; i++) {
+    const a = (rotationDeg + i * 360 / sides) * Math.PI / 180;
+    pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+  }
+  return pts;
+}
+function ptsToStr(pts) { return pts.map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' '); }
+
+function shapeSides(shape) {
+  return { triangle:3, square:4, pentagon:5, hexagon:6, heptagon:7, octagon:8, nonagon:9, decagon:10 }[shape] || 0;
+}
+
+// ---------- color helpers (for gradient sheens on the richer modal view) ----------
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  return [parseInt(h.substr(0,2),16), parseInt(h.substr(2,2),16), parseInt(h.substr(4,2),16)];
+}
+function shade(hex, pct) { // pct > 0 lightens toward white, < 0 darkens toward black
+  const [r,g,b] = hexToRgb(hex);
+  const t = pct > 0 ? 255 : 0;
+  const p = Math.abs(pct);
+  const mix = (c) => Math.round(c + (t - c) * p);
+  return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
+}
+
+// One entry per tier (0-10). Each maps to portable CSS classes only —
+// no JS timers — so this whole block can be lifted into any site/app as-is.
+const TIER_ANIM = {
+  0:  { group: 't-breathe' },                                   // breathing
+  1:  { group: 't-rotate-cw' },                                 // rotates every 2s
+  2:  { filter: 't-pulse-glow' },                                // pulsing glow
+  3:  { shimmer: true },                                        // shimmer sweep (SMIL)
+  4:  { group: 't-sway' },                                      // pendulum sway
+  5:  { filter: 't-twinkle' },                                  // twinkle
+  6:  { group: 't-rotate-ccw' },                                // counter-rotation
+  7:  { group: 't-ember' },                                     // ember pulse (glow+scale)
+  8:  { group: 't-rotate-slow', shimmer: true },                // slow rotate + shimmer
+  9:  { group: 't-heartbeat' },                                 // heartbeat double-pulse
+  10: { group: 't-rotate-slow', innerGroup: 't-breathe', filter: 't-glow-gold' }, // apex combo
+};
+
+function buildShimmerOverlay(cx, cy, outerR, uid) {
+  return `<clipPath id="clip-${uid}"><circle cx="${cx}" cy="${cy}" r="${outerR}"/></clipPath>
+  <g clip-path="url(#clip-${uid})">
+    <ellipse cx="${cx - outerR}" cy="${cy}" rx="7" ry="${outerR}" fill="#ffffff" opacity="0.22" transform="rotate(22 ${cx} ${cy})">
+      <animate attributeName="cx" values="${cx-outerR-14};${cx+outerR+14}" dur="2.6s" repeatCount="indefinite"/>
+    </ellipse>
+  </g>`;
+}
+
+function buildBadgeSVG(entry, size, isModal) {
+  const cx = 50, cy = 50;
+  const outerR = 44;
+  const uid = entry.level + (isModal ? '-m' : '-g');
+  let inner = '';
+
+  if (entry.goldApex) {
+    inner += `<defs><radialGradient id="apexGlow-${uid}" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff6da" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#fff6da" stop-opacity="0"/>
+    </radialGradient></defs>
+    <circle cx="${cx}" cy="${cy}" r="46" fill="url(#apexGlow-${uid})"/>`;
+  }
+
+  // glow filter used throughout the richer modal rendering
+  if (isModal) {
+    inner += `<defs><filter id="glow-${uid}" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="1.1" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter></defs>`;
+  }
+
+  // outer gold ring: double bezel + gem-dots in modal mode, single ring in grid
+  if (isModal) {
+    inner += `<circle cx="${cx}" cy="${cy}" r="${outerR}" fill="none" stroke="#dfb25c" stroke-width="2.4"/>`;
+    inner += `<circle cx="${cx}" cy="${cy}" r="${outerR-3}" fill="none" stroke="#8a6a30" stroke-width="1"/>`;
+    [0,90,180,270].forEach(a => {
+      const rad = a * Math.PI / 180;
+      const gx = cx + outerR * Math.cos(rad), gy = cy + outerR * Math.sin(rad);
+      inner += `<circle cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="2.1" fill="#fff3cf" stroke="#dfb25c" stroke-width="0.6"/>`;
+    });
+  } else {
+    inner += `<circle cx="${cx}" cy="${cy}" r="${outerR}" fill="none" stroke="#dfb25c" stroke-width="2.6"/>`;
+  }
+
+  let r = outerR * 0.80;
+  const shrink = 0.80;
+  const n = entry.decagons;
+  for (let k = 0; k < n; k++) {
+    const w = Math.max(0.5, 2.3 - n * 0.14);
+    const pts = regularPolygonPoints(cx, cy, r, 10);
+    if (isModal) {
+      const gid = `dgrad-${uid}-${k}`;
+      inner += `<defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${shade(entry.colors[k], 0.45)}"/>
+        <stop offset="55%" stop-color="${entry.colors[k]}"/>
+        <stop offset="100%" stop-color="${shade(entry.colors[k], -0.35)}"/>
+      </linearGradient></defs>`;
+      inner += `<polygon points="${ptsToStr(pts)}" fill="${entry.colors[k]}" fill-opacity="0.07" stroke="url(#${gid})" stroke-width="${(w+0.5).toFixed(2)}" filter="url(#glow-${uid})"/>`;
+    } else {
+      inner += `<polygon points="${ptsToStr(pts)}" fill="none" stroke="${entry.colors[k]}" stroke-width="${w.toFixed(2)}"/>`;
+    }
+    r *= shrink;
+  }
+
+  if (entry.shape) {
+    const s = entry.shape;
+    const color = n > 0 ? entry.colors[n - 1] : '#dfb25c';
+    const sw = isModal ? 2.8 : 2.4;
+    const filt = isModal ? ` filter="url(#glow-${uid})"` : '';
+    const fillOpacity = isModal ? ' fill-opacity="0.12"' : ' fill="none"';
+    if (s === 'circle') {
+      inner += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(2)}" ${isModal ? `fill="${color}"` : 'fill="none"'}${isModal?fillOpacity:''} stroke="${color}" stroke-width="${sw}"${filt}/>`;
+    } else if (s === 'dissected-circle') {
+      inner += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(2)}" ${isModal ? `fill="${color}"` : 'fill="none"'}${isModal?fillOpacity:''} stroke="${color}" stroke-width="${sw}"${filt}/>`;
+      inner += `<line x1="${(cx-r).toFixed(2)}" y1="${cy}" x2="${(cx+r).toFixed(2)}" y2="${cy}" stroke="${color}" stroke-width="${sw-0.2}"${filt}/>`;
+    } else {
+      const sides = shapeSides(s);
+      const pts = regularPolygonPoints(cx, cy, r, sides);
+      inner += `<polygon points="${ptsToStr(pts)}" ${isModal ? `fill="${color}"` : 'fill="none"'}${isModal?fillOpacity:''} stroke="${color}" stroke-width="${sw}"${filt}/>`;
+    }
+  }
+
+  if (entry.diamond) {
+    const dr = entry.goldApex ? 10 : 7.5;
+    if (isModal) {
+      // proper faceted diamond: 4 shaded facets + a sparkle highlight, instead of a flat kite
+      const baseCol = entry.goldApex ? '#ffe9a8' : '#bfe9ff';
+      const top = shade(baseCol, 0.35), left = shade(baseCol, 0.05), right = shade(baseCol, -0.15), bottom = shade(baseCol, -0.4);
+      const glow = entry.goldApex ? '#ffdd7a' : '#8fd6ff';
+      inner += `<g filter="url(#glow-${uid})">
+        <polygon points="${cx},${cy-dr} ${cx+dr*0.72},${cy} ${cx},${cy} ${cx-dr*0.72},${cy}" fill="${top}"/>
+        <polygon points="${cx-dr*0.72},${cy} ${cx},${cy} ${cx},${cy+dr} " fill="${left}"/>
+        <polygon points="${cx},${cy} ${cx+dr*0.72},${cy} ${cx},${cy+dr}" fill="${right}"/>
+        <polygon points="${cx},${cy-dr} ${cx+dr*0.72},${cy} ${cx},${cy+dr} ${cx-dr*0.72},${cy}" fill="none" stroke="${glow}" stroke-width="0.8"/>
+        <path d="M${(cx-dr*0.3).toFixed(1)},${(cy-dr*0.35).toFixed(1)} l1.6,0 M${(cx-dr*0.05).toFixed(1)},${(cy-dr*0.55).toFixed(1)} l0,1.6" stroke="#ffffff" stroke-width="0.7" opacity="0.9"/>
+      </g>`;
+    } else {
+      const dCol = entry.goldApex ? '#fff3cf' : '#bfe9ff';
+      const glowCol = entry.goldApex ? '#ffdd7a' : '#8fd6ff';
+      inner += `<polygon points="${cx},${cy-dr} ${cx+dr*0.72},${cy} ${cx},${cy+dr} ${cx-dr*0.72},${cy}"
+               fill="${dCol}" stroke="${glowCol}" stroke-width="1" opacity="0.95"/>`;
+    }
+  }
+
+  // ---- per-tier animation wrapping (nested <g> so transform-based effects never conflict) ----
+  const ta = TIER_ANIM[entry.tier];
+  let content = inner;
+  if (ta.innerGroup) content = `<g class="${ta.innerGroup}">${content}</g>`;
+  const groupClasses = [];
+  if (ta.group) groupClasses.push(ta.group);
+  if (ta.filter) groupClasses.push(ta.filter);
+  if (groupClasses.length) content = `<g class="${groupClasses.join(' ')}">${content}</g>`;
+  if (ta.shimmer) content += buildShimmerOverlay(cx, cy, outerR, uid);
+
+  // ---- modal-only ornamentation: colored glow backdrop + ornamental tick ring ----
+  let pre = '', post = '';
+  if (isModal) {
+    const glowColor = n > 0 ? entry.colors[n - 1] : '#dfb25c';
+    pre = `<defs><radialGradient id="bg-${uid}" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="${glowColor}" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="${glowColor}" stop-opacity="0"/>
+      </radialGradient></defs>
+      <circle cx="${cx}" cy="${cy}" r="49" fill="url(#bg-${uid})"/>`;
+    const ticks = [];
+    for (let i = 0; i < 12; i++) {
+      const a = i * 30 * Math.PI / 180;
+      const x1 = cx + 46 * Math.cos(a), y1 = cy + 46 * Math.sin(a);
+      const x2 = cx + 49 * Math.cos(a), y2 = cy + 49 * Math.sin(a);
+      ticks.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="#dfb25c" stroke-width="1" opacity="0.7"/>`);
+    }
+    post = ticks.join('');
+  }
+
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">${pre}${content}${post}</svg>`;
+}
+
+// ---------- render grid ----------
+const grid = document.getElementById('grid');
+LEVELS.forEach((entry, i) => {
+  if (i > 0 && i % 10 === 0) {
+    const brk = document.createElement('div');
+    brk.className = 'tier-break';
+    grid.appendChild(brk);
+  }
+  const cell = document.createElement('div');
+  cell.className = 'badge-cell';
+  cell.innerHTML = buildBadgeSVG(entry, 64, false) + `<div class="lvl-num">#${entry.level}</div>`;
+  cell.addEventListener('click', () => openModal(i));
+  grid.appendChild(cell);
+});
+
+// ---------- modal ----------
+const overlay = document.getElementById('modalOverlay');
+const modalCard = document.getElementById('modalCard');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+let currentIndex = 0;
+
+function tierGlowColor(entry) {
+  return entry.decagons > 0 ? entry.colors[entry.decagons - 1] : '#dfb25c';
+}
+
+function openModal(index) {
+  index = Math.max(0, Math.min(LEVELS.length - 1, index));
+  currentIndex = index;
+  const entry = LEVELS[index];
+
+  document.getElementById('modalBadgeWrap').innerHTML = buildBadgeSVG(entry, 120, true);
+  document.getElementById('modalBadgeWrap').firstChild && (document.getElementById('modalBadgeWrap').firstChild.className = 'modal-badge');
+  document.getElementById('modalName').textContent = entry.name;
+  document.getElementById('modalMeaning').textContent = entry.meaning;
+  document.getElementById('modalTag').textContent = `LEVEL ${entry.level} OF 100`;
+  document.getElementById('modalDays').textContent = entry.days + ' days';
+  document.getElementById('modalExpect').textContent = entry.expectationPointsLabel + ' pts';
+  document.getElementById('modalMotiv').textContent = entry.motivation;
+  document.getElementById('modalImportance').textContent = entry.importance;
+
+  const glow = tierGlowColor(entry);
+  modalCard.style.boxShadow = `0 20px 60px rgba(0,0,0,.6), 0 0 30px ${glow}55`;
+
+  prevBtn.disabled = index === 0;
+  nextBtn.disabled = index === LEVELS.length - 1;
+
+  overlay.classList.add('open');
+}
+
+function closeModal() { overlay.classList.remove('open'); }
+
+document.getElementById('modalClose').addEventListener('click', closeModal);
+overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+prevBtn.addEventListener('click', () => openModal(currentIndex - 1));
+nextBtn.addEventListener('click', () => openModal(currentIndex + 1));
+
+document.addEventListener('keydown', (e) => {
+  if (!overlay.classList.contains('open')) return;
+  if (e.key === 'ArrowLeft') openModal(currentIndex - 1);
+  if (e.key === 'ArrowRight') openModal(currentIndex + 1);
+  if (e.key === 'Escape') closeModal();
+});
+
+// swipe left/right on the card to move between ranks
+let touchStartX = null;
+modalCard.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, {passive:true});
+modalCard.addEventListener('touchend', (e) => {
+  if (touchStartX === null) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 45) {
+    if (dx > 0) openModal(currentIndex - 1); else openModal(currentIndex + 1);
+  }
+  touchStartX = null;
+}, {passive:true});
+
+</script>
+<script>addEventListener("message",function(e){if(e.data&&e.data.wmsRank&&typeof openModal=="function"){openModal(Math.min(LEVELS.length,e.data.wmsRank)-1)}})</script></body>
+</html>
